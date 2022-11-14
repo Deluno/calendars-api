@@ -1,0 +1,6 @@
+@import 'antd/dist/antd.dark.css';
+
+.ant-layout-header {
+  height: auto;
+  line-height: normal;
+}
