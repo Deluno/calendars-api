@@ -1,6 +1,11 @@
 @import 'antd/dist/antd.dark.css';
 
 .ant-layout-header {
-  height: auto;
+  height: 4.5rem;
   line-height: normal;
+  padding: 0 1.5rem;
+}
+
+h1 {
+  margin: 0;
 }

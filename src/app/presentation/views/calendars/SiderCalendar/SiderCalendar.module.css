@@ -1,0 +1,14 @@
+.calendar {
+  width: 300px;
+  position: sticky;
+}
+
+.calendar-header-wrapper {
+  padding: 0.5rem 1rem;
+}
+
+.calendar-header-title {
+  flex: auto;
+  display: flex;
+  align-items: center;
+}

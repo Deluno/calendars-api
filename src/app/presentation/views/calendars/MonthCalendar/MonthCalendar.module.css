@@ -1,0 +1,65 @@
+/* Grid class that evenly stretches elements inside having 7 columns */
+.grid {
+  /* flex: auto; */
+  display: grid;
+  height: calc(100vh - 4.5rem);
+  position: sticky;
+  top: 4.5rem;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: 2.5rem repeat(5, 1fr);
+}
+
+.day {
+  padding: 0.25rem;
+  border-radius: 0;
+  border-top: none;
+  border-right: none;
+  overflow: hidden;
+}
+
+.day > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+}
+
+.day .day-number {
+  align-self: flex-end;
+  padding: 0 0.4rem 0.3rem 0;
+}
+
+.day .day-events {
+  width: 100%;
+  align-self: flex-start;
+}
+
+.event {
+  width: 100%;
+  height: 1.6rem;
+  padding: 0 0.5rem;
+  margin-bottom: 0.25rem;
+  border: 1px solid gray;
+  border-radius: 0.3rem;
+}
+
+.event > span {
+  width: 100%;
+  text-align: start;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.week-day {
+  padding: 0.5rem;
+  border-radius: 0;
+  border-top: none;
+  border-right: none;
+  font-weight: bold;
+}
+
+.week-day > div {
+  padding: 0;
+  text-align: center;
+}

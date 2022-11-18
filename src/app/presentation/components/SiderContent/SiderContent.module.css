@@ -1,0 +1,9 @@
+.menu-item {
+  border-style: none;
+}
+
+.menu > ul,
+.menu > div {
+  border-bottom: 1px solid #262626;
+  margin-bottom: 0.4rem;
+}

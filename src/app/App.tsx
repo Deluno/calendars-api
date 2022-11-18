@@ -4,7 +4,7 @@ import {
   createBrowserRouter,
   Navigate,
 } from 'react-router-dom';
-import AppLayout from './presentation/components/AppLayout';
+import AppLayout from './presentation/components/AppLayout/AppLayout';
 import LoginPage from './presentation/pages/LoginPage';
 
 import './App.css';
@@ -16,7 +16,7 @@ const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      { path: '', element: <Navigate to='/login' /> },
+      { path: '', element: <Navigate to='/dashboard' /> },
       {
         path: 'login',
         element: <LoginPage />,
