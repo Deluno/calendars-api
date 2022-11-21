@@ -35,9 +35,9 @@ const SiderCalendar = () => {
     <Calendar
       className={classes.calendar}
       fullscreen={false}
-      headerRender={({ value, type, onChange, onTypeChange }) => {
-        return renderCustomCalendarHeader(value, type, onChange, onTypeChange);
-      }}
+      headerRender={({ value, type, onChange, onTypeChange }) =>
+        renderCustomCalendarHeader(value, type, onChange, onTypeChange)
+      }
     />
   );
 };
