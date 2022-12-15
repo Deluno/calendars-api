@@ -1,5 +1,5 @@
 import { CalendarEvent } from '@/types/events';
-import { DatePicker, Form, Input, Modal } from 'antd';
+import { DatePicker, Form, Input, Modal, Row, TimePicker } from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
@@ -16,14 +16,15 @@ const EventModal = (props: EventModalProps) => {
   const [title, setTitle] = useState('');
   const [type, setType] = useState<'event' | 'task'>('event');
   const [description, setDescription] = useState('');
-  const [dateStart, setDateStart] = useState(new Date());
-  const [dateEnd, setDateEnd] = useState<Date>();
+  const [dateStart, setDateStart] = useState(moment());
+  const [dateEnd, setDateEnd] = useState<moment.Moment>();
 
   const handleEventChange = (event: CalendarEvent) => {
     setTitle(event.title);
+    setType(event.type);
     setDescription(event.description);
-    setDateStart(event.dateStart);
-    setDateEnd(event.dateEnd);
+    setDateStart(moment(event.dateStart));
+    setDateEnd(event.dateEnd ? moment(event.dateEnd) : undefined);
   };
 
   useEffect(() => {
@@ -36,8 +37,8 @@ const EventModal = (props: EventModalProps) => {
       title,
       type,
       description,
-      dateStart,
-      dateEnd,
+      dateStart: dateStart.toDate(),
+      dateEnd: dateEnd?.toDate(),
     });
   };
 
@@ -63,21 +64,72 @@ const EventModal = (props: EventModalProps) => {
         </Form.Item>
         <Form.Item label='Date'>
           {dateEnd ? (
-            <DatePicker.RangePicker
-              showTime
-              value={[moment(dateStart), moment(dateEnd)]}
-              onChange={(range) => {
-                if (range) {
-                  setDateStart(range[0]!.toDate());
-                  setDateEnd(range[1]!.toDate());
-                }
-              }}
-            />
+            <Row>
+              <DatePicker
+                value={moment(dateStart)}
+                onChange={(date) => {
+                  if (date) {
+                    setDateStart((prev) =>
+                      moment(
+                        new Date(
+                          date.year(),
+                          date.month(),
+                          date.date(),
+                          prev.hour(),
+                          prev.minute(),
+                        ),
+                      ),
+                    );
+                    setDateEnd((prev) =>
+                      moment(
+                        new Date(
+                          date.year(),
+                          date.month(),
+                          date.date(),
+                          prev?.hour() || 0,
+                          prev?.minute() || 0,
+                        ),
+                      ),
+                    );
+                  }
+                }}
+              />
+              <TimePicker.RangePicker
+                value={[moment(dateStart), moment(dateEnd)]}
+                onChange={(dates) => {
+                  if (dates) {
+                    const [dateStart, dateEnd] = dates;
+                    setDateStart((prev) =>
+                      moment(
+                        new Date(
+                          prev.year(),
+                          prev.month(),
+                          prev.date(),
+                          dateStart?.hour(),
+                          dateStart?.minute(),
+                        ),
+                      ),
+                    );
+                    setDateEnd((prev) =>
+                      moment(
+                        new Date(
+                          prev?.year() || 0,
+                          prev?.month() || 0,
+                          prev?.date() || 0,
+                          dateEnd?.hour(),
+                          dateEnd?.minute(),
+                        ),
+                      ),
+                    );
+                  }
+                }}
+              />
+            </Row>
           ) : (
             <DatePicker
               showTime
               value={moment(dateStart)}
-              onChange={(date) => date && setDateStart(date.toDate())}
+              onChange={(date) => date && setDateStart(date)}
             />
           )}
         </Form.Item>

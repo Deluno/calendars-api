@@ -3,17 +3,17 @@ import ReactDOM from 'react-dom/client';
 import App from './app/App';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import { ApiProvider } from '@reduxjs/toolkit/dist/query/react';
-import { apiSlice } from '@/app/data/source/api';
+import { Provider } from 'react-redux';
+import store from '@/app/data/store';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
 );
 root.render(
   <React.StrictMode>
-    <ApiProvider api={apiSlice}>
+    <Provider store={store}>
       <App />
-    </ApiProvider>
+    </Provider>
   </React.StrictMode>,
 );
 

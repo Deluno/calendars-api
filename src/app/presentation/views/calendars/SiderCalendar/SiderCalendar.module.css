@@ -1,6 +1,6 @@
 .calendar {
-  width: 300px;
   position: sticky;
+  min-width: 280px;
 }
 
 .calendar-header-wrapper {

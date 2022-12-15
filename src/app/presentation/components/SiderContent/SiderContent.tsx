@@ -4,7 +4,9 @@ import { CalendarEvent } from '@/types/events';
 import { CalendarOutlined, PlusOutlined } from '@ant-design/icons';
 import { Checkbox, Col, Menu, MenuProps } from 'antd';
 import { useState } from 'react';
+import { usePostEventMutation } from '@/app/data/source/api';
 import classes from './SiderContent.module.css';
+import moment from 'moment';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -27,6 +29,7 @@ const getItem = (
 enum MenuItemKey {
   ADD_EVENT = 'add-event',
   ADD_TASK = 'add-task',
+  ADD_CALENDAR = 'add-calendar',
 }
 
 const createMenuItems: MenuItem[] = [
@@ -68,22 +71,23 @@ interface SiderContentProps {
 
 const SiderContent = (props: SiderContentProps) => {
   const { collapsed } = props;
-  const today = new Date();
+  const today = moment();
 
+  const [postEvent] = usePostEventMutation();
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItemKey>();
   const [initialEvent, setInitialEvent] = useState<CalendarEvent>({
     id: '',
     type: 'event',
     title: '',
     description: '',
-    dateStart: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+    dateStart: moment(today, 'YYYY-MM-DD').toDate(),
   });
 
   const handleAddEvent = () => {
     setInitialEvent((prev) => ({
       ...prev,
       type: 'event',
-      dateEnd: new Date(prev.dateStart.getTime() + 3600000),
+      dateEnd: moment(today, 'YYYY-MM-DD').add(1, 'hour').toDate(),
     }));
     setSelectedMenuItem(MenuItemKey.ADD_EVENT);
   };
@@ -95,6 +99,10 @@ const SiderContent = (props: SiderContentProps) => {
       dateEnd: undefined,
     }));
     setSelectedMenuItem(MenuItemKey.ADD_TASK);
+  };
+
+  const handleEventModalSave = (event: CalendarEvent) => {
+    postEvent(event);
   };
 
   return (
@@ -122,14 +130,13 @@ const SiderContent = (props: SiderContentProps) => {
           defaultOpenKeys={['my-calendars']}
           mode='inline'
           items={myCalendarsMenuItems}
-          selectedKeys={['']}
         />
       </Col>
       <EventModal
         event={initialEvent}
         isOpen={!!selectedMenuItem}
         onClose={() => setSelectedMenuItem(undefined)}
-        onEventSave={(event) => console.log(event)}
+        onEventSave={(event) => handleEventModalSave(event)}
       />
     </>
   );

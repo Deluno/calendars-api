@@ -1,11 +1,18 @@
 import useElementSize from '@/hooks/use-element-size';
+import { CalendarEvent } from '@/types/events';
 import { Button, Card } from 'antd';
 import { useEffect, useRef, useState } from 'react';
-import { MonthCalendarDayProps } from '../MonthCalendar/MonthCalendar';
 import classes from './MonthCalendarDay.module.css';
 
+export interface MonthCalendarDayProps {
+  day: { date: Date; inMonth: boolean; isToday: boolean };
+  events: CalendarEvent[];
+  onEventClick?: (event: CalendarEvent) => void;
+  onDayClick?: (day: Date) => void;
+}
+
 export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
-  const { day, events, onEventClick = () => {} } = props;
+  const { day, events, onEventClick = () => {}, onDayClick = () => {} } = props;
   const { date } = day;
 
   const dayCardRef = useRef<HTMLDivElement>(null);
@@ -23,7 +30,12 @@ export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
   }, [dayCardHeight, eventDivHeight, events.length]);
 
   return (
-    <Card ref={dayCardRef} key={date.toDateString()} className={classes.day}>
+    <Card
+      onClick={onDayClick.bind(null, date)}
+      ref={dayCardRef}
+      key={date.toDateString()}
+      className={classes.day}
+    >
       <div className={classes['day-number']}>{date.getDate()}</div>
       <div className={classes['day-events']}>
         {eventsPerDay > 0 &&
@@ -31,9 +43,9 @@ export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
             <Button
               type='ghost'
               ref={eventDivRef}
-              key={event.title}
+              key={event.id}
               className={classes.event}
-              onClick={() => onEventClick(event)}
+              onClick={onEventClick.bind(null, event)}
             >
               {event.title}
             </Button>

@@ -5,40 +5,12 @@ import { CalendarEvent } from '@/types/events';
 import { MonthCalendarDay } from '../MonthCalendarDay/MonthCalendarDay';
 import EventModal from '../../events/EventModal/EventModal';
 import classes from './MonthCalendar.module.css';
-
-const events: CalendarEvent[] = [
-  {
-    id: '1',
-    type: 'task',
-    title: 'Task 1',
-    description: 'Task 1 description',
-    dateStart: new Date(2022, 10, 14),
-  },
-  {
-    id: '2',
-    type: 'event',
-    title: 'Event 2',
-    description: 'Event 2 description',
-    dateStart: new Date(2022, 10, 14),
-    dateEnd: new Date(2022, 10, 15),
-  },
-  {
-    id: '3',
-    type: 'task',
-    title: 'Task 3',
-    description: 'Task 3 description',
-    dateStart: new Date(2022, 10, 15),
-  },
-];
-
-export interface MonthCalendarDayProps {
-  day: { date: Date; inMonth: boolean; isToday: boolean };
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent) => void;
-}
+import { useGetEventsQuery } from '@/app/data/source/api';
+import moment from 'moment';
 
 const MonthCalendar = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>();
+  const { data: events } = useGetEventsQuery();
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const today = new Date();
@@ -52,16 +24,27 @@ const MonthCalendar = () => {
             <div>{weekDay}</div>
           </Card>
         ))}
-        {dates.map((item) => (
+        {dates.map((day) => (
           <MonthCalendarDay
-            key={item.date.toDateString()}
-            day={item}
-            events={events.filter(
-              (event) =>
-                event.dateStart.toISOString() === item.date.toISOString(),
-            )}
+            key={day.date.toDateString()}
+            day={day}
+            events={
+              events?.filter((event) =>
+                moment(event.dateStart).isSame(day.date, 'day'),
+              ) ?? []
+            }
             onEventClick={(event) => {
               setSelectedEvent(event);
+            }}
+            onDayClick={(date) => {
+              setSelectedEvent({
+                id: '',
+                title: '',
+                type: 'event',
+                dateStart: date,
+                dateEnd: moment(date).add(1, 'hour').toDate(),
+                description: '',
+              } as CalendarEvent);
             }}
           />
         ))}

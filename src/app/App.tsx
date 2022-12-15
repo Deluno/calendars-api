@@ -10,6 +10,7 @@ import LoginPage from './presentation/pages/LoginPage';
 import './App.css';
 import RegistrationPage from './presentation/pages/RegistrationPage';
 import CalendarPage from './presentation/pages/CalendarPage';
+import RequireAuth from '@/app/presentation/views/auth/RequireAuth';
 
 const router = createBrowserRouter([
   {
@@ -27,7 +28,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'dashboard',
-        element: <CalendarPage />,
+        element: (
+          <RequireAuth>
+            <CalendarPage />
+          </RequireAuth>
+        ),
       },
     ],
   },
