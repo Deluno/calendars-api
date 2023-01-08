@@ -2,7 +2,6 @@
   display: grid;
   height: calc(100vh - 4.5rem);
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 2.5rem repeat(5, 1fr);
 }
 
 .week-day {

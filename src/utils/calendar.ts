@@ -1,49 +1,45 @@
-export const getCalendar = (now: Date) => {
+import type { Moment } from 'moment';
+import moment from 'moment';
+
+export const getCalendar = (now: Moment) => {
   // get dates in 5 weeks with days from previous and next month
   const dates = [];
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const firstDayInWeek = firstDay.getDay();
-  const lastDayInWeek = lastDay.getDay();
+  const firstDay = moment(now.clone().startOf('month'));
+  const lastDay = moment(now.clone().endOf('month'));
+  const firstDayInWeek = firstDay.day();
+  const lastDayInWeek = lastDay.day();
 
   // get dates in previous month
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastDayInPrevMonth = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    0,
-  ).getDate();
+  const prevMonth = moment(now.clone().subtract(1, 'month'));
+  const lastDayInPrevMonth = prevMonth.daysInMonth();
   for (let i = firstDayInWeek - 1; i >= 0; i--) {
     dates.push({
-      date: new Date(
-        prevMonth.getFullYear(),
-        prevMonth.getMonth(),
-        lastDayInPrevMonth - i,
-      ),
+      date: moment(prevMonth.clone().date(lastDayInPrevMonth - i)),
       inMonth: false,
       isToday: false,
     });
   }
 
   // get dates in current month
-  const lastDayInMonth = lastDay.getDate();
+  const lastDayInMonth = now.daysInMonth();
   for (let i = 1; i <= lastDayInMonth; i++) {
+    const date = moment(now.clone().date(i));
     dates.push({
-      date: new Date(now.getFullYear(), now.getMonth(), i),
+      date,
       inMonth: true,
-      isToday: now.getDate() === i,
+      isToday: date.isSame(moment(), 'day'),
     });
   }
 
   // get dates in next month
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonth = moment(now.clone().add(1, 'month'));
   for (let i = 1; i <= 6 - lastDayInWeek; i++) {
     dates.push({
-      date: new Date(nextMonth.getFullYear(), nextMonth.getMonth(), i),
+      date: moment(nextMonth.clone().date(i)),
       inMonth: false,
       isToday: false,
     });
   }
 
-  return dates;
+  return { dates: dates, weeks: Math.floor(dates.length / 7) };
 };

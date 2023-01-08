@@ -1,5 +1,5 @@
 import { CalendarFilled } from '@ant-design/icons';
-import { Row, Space } from 'antd';
+import { Space } from 'antd';
 
 const Logo = () => {
   return (

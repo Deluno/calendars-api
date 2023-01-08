@@ -1,15 +1,9 @@
-.menu-item {
-  border-style: none;
-}
-
 .menu {
   height: calc(100vh - 4.5rem - 3rem);
-  overflow-y: auto;
   overflow-x: hidden;
 }
 
 .menu > ul,
 .menu > div {
-  border-bottom: 1px solid #262626;
   margin-bottom: 0.4rem;
 }

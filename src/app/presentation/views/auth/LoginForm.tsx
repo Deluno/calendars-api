@@ -1,6 +1,7 @@
 import { useLoginMutation } from '@/app/data/source/api';
-import { setUser } from '@/app/data/store/userSlice';
+import { setToken, setUser } from '@/app/data/store/userSlice';
 import { LocalStorageKeys } from '@/types/common';
+import { decodeToken } from '@/utils/token';
 import { Card, Form, Input, Button, Skeleton } from 'antd';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +17,10 @@ const LoginForm = () => {
     const { username, password } = values;
     try {
       const payload = await login({ username, password }).unwrap();
-      dispatch(setUser(payload));
+      dispatch(setToken(payload));
+      const user = decodeToken(payload.token);
+      dispatch(setUser(user));
+
       navigate('/dashboard');
 
       localStorage.setItem(LocalStorageKeys.Token, payload.token);

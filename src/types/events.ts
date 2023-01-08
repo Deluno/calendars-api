@@ -1,8 +1,11 @@
-export interface CalendarEvent {
-  id: string;
+import type { Moment } from 'moment';
+
+export interface CalendarEntity {
+  id?: number;
   type: 'event' | 'task';
   title: string;
   description: string;
-  dateStart: Date;
-  dateEnd?: Date;
+  startDate: Moment;
+  endDate?: Moment;
+  calendarId?: number;
 }

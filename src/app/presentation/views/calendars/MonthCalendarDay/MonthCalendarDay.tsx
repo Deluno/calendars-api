@@ -1,57 +1,81 @@
-import useElementSize from '@/hooks/use-element-size';
-import { CalendarEvent } from '@/types/events';
+import { CalendarEntity } from '@/types/events';
+import { blue } from '@ant-design/colors';
 import { Button, Card } from 'antd';
-import { useEffect, useRef, useState } from 'react';
+import type { Moment } from 'moment';
+import { useEffect, useState } from 'react';
+import { useResizeDetector } from 'react-resize-detector';
 import classes from './MonthCalendarDay.module.css';
 
 export interface MonthCalendarDayProps {
-  day: { date: Date; inMonth: boolean; isToday: boolean };
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent) => void;
-  onDayClick?: (day: Date) => void;
+  day: { date: Moment; inMonth: boolean; isToday: boolean };
+  entities: CalendarEntity[];
+  onEntityClick?: (event: CalendarEntity) => void;
+  onDayClick?: (day: Moment) => void;
 }
 
 export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
-  const { day, events, onEventClick = () => {}, onDayClick = () => {} } = props;
+  const {
+    day,
+    entities,
+    onEntityClick = () => {},
+    onDayClick = () => {},
+  } = props;
   const { date } = day;
 
-  const dayCardRef = useRef<HTMLDivElement>(null);
-  const eventDivRef = useRef<HTMLDivElement>(null);
+  const { height: dayCardHeight, ref: dayCardRef } = useResizeDetector();
   const [eventsPerDay, setEventsPerDay] = useState(1);
-  const { height: dayCardHeight } = useElementSize(dayCardRef);
-  const { height: eventDivHeight } = useElementSize(eventDivRef);
+  const [showMore, setShowMore] = useState(false);
+  const eventDivHeight = 25;
 
   useEffect(() => {
-    if (dayCardHeight <= 0 || eventDivHeight <= 0) return;
-    const eventsInDiv = Math.floor(dayCardHeight / eventDivHeight);
-    setEventsPerDay(
-      events.length >= eventsInDiv ? eventsInDiv - 2 : events.length,
-    );
-  }, [dayCardHeight, eventDivHeight, events.length]);
+    if (!dayCardHeight) return;
+    const eventsInDiv = Math.floor(dayCardHeight / (eventDivHeight + 4));
+    const epd =
+      entities.length >= eventsInDiv ? eventsInDiv - 2 : entities.length;
+    setEventsPerDay(epd);
+    setShowMore(entities.length > epd && epd >= 0);
+  }, [dayCardHeight, entities.length]);
+
+  // const handleMoreClick = () => {};
 
   return (
     <Card
       onClick={onDayClick.bind(null, date)}
       ref={dayCardRef}
-      key={date.toDateString()}
+      key={date.toISOString()}
       className={classes.day}
     >
-      <div className={classes['day-number']}>{date.getDate()}</div>
+      <div className={classes['day-number-container']}>
+        <div
+          className={classes['day-number']}
+          style={{
+            color: day.inMonth ? '' : 'gray',
+            backgroundColor: day.isToday ? blue.primary : '',
+          }}
+        >
+          {date.format('D')}
+        </div>
+      </div>
       <div className={classes['day-events']}>
         {eventsPerDay > 0 &&
-          events.slice(0, eventsPerDay).map((event) => (
+          entities.slice(0, eventsPerDay).map((event) => (
             <Button
               type='ghost'
-              ref={eventDivRef}
               key={event.id}
               className={classes.event}
-              onClick={onEventClick.bind(null, event)}
+              style={{ height: eventDivHeight }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEntityClick(event);
+              }}
             >
               {event.title}
             </Button>
           ))}
-        {events.length > eventsPerDay && eventsPerDay >= 0 && (
-          <Button type='link'>+{events.length - eventsPerDay} more</Button>
+        {showMore && (
+          <Button type='link' onClick={() => {}}>
+            +{entities.length - eventsPerDay} more
+          </Button>
         )}
       </div>
     </Card>

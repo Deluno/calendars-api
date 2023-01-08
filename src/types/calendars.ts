@@ -1,6 +1,10 @@
 export interface Calendar {
-  id: number;
+  id?: number;
   name: string;
   isPublic: boolean;
-  ownerId: number;
+  ownerId?: number;
+}
+
+export interface SelectableCalendar extends Calendar {
+  selected: boolean;
 }

@@ -1,15 +1,27 @@
+import { Calendar } from '@/types/calendars';
+
 export interface LoginResponse {
   token: string;
   refreshToken: string;
   expires: string;
 }
 
-export interface CalendarEventResponse {
-  type: 'event' | 'task';
-  title: string;
-  description: string;
-  dateStart: Date;
-  dateEnd?: Date;
+export interface UserResponse {
+  id: number;
+  userName: string;
+  email: string;
 }
 
-export type CalendarEventsResponse = { [id: string]: CalendarEventResponse };
+export interface CalendarEntityResponse {
+  id: number;
+  title: string;
+  type: 'event' | 'task';
+  description: string;
+  startDate: string;
+  endDate?: string;
+  calendarId: number;
+}
+
+export interface UserWithCalendarsResponse extends UserResponse {
+  userCalendars: Calendar[];
+}

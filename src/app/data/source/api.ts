@@ -1,19 +1,32 @@
-import { CalendarEvent } from '@/types/events';
-import { LoginRequest, RegistrationRequest } from '@/types/requests';
-import { LoginResponse } from '@/types/responses';
+import {
+  CalendarEventPostRequest,
+  CalendarTaskPostRequest,
+  LoginRequest,
+  RegistrationRequest,
+} from '@/types/requests';
+import {
+  CalendarEntityResponse as CalendarEventResponse,
+  LoginResponse,
+  UserResponse,
+  UserWithCalendarsResponse,
+} from '@/types/responses';
 import { Calendar } from '@/types/calendars';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { RootState } from '@/app/data/store';
 
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: 'https://localhost:7097/api/',
-    headers: {
-      'Content-Type': 'application/json; charset=UTF-8',
-      Authorization: 'Bearer ' + localStorage.getItem('token') || '',
+    prepareHeaders: (headers, { getState }) => {
+      const token = (getState() as RootState).userState.token;
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      return headers;
     },
   }),
-  tagTypes: ['Event', 'Calendar'],
+  tagTypes: ['Task', 'Event', 'Calendar', 'User'],
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (user: RegistrationRequest) => ({
@@ -29,30 +42,75 @@ export const apiSlice = createApi({
         body: user,
       }),
     }),
-    getEvents: builder.query<CalendarEvent[], void>({
+    getEvents: builder.query<CalendarEventResponse[], void>({
       query: () => 'CalendarEvent',
+      transformResponse: (response: CalendarEventResponse[]) => {
+        return response.map((event) => ({
+          ...event,
+          type: 'event',
+        }));
+      },
       providesTags: ['Event'],
     }),
     postEvent: builder.mutation({
-      query: (event) => ({
+      query: (event: CalendarEventPostRequest) => ({
         url: 'CalendarEvent',
         method: 'POST',
         body: event,
       }),
       invalidatesTags: ['Event'],
     }),
-    getCalendars: builder.query<Calendar[], string>({
-      query: (username: string) => ({
-        url: `Calendar/${username}`,
+    getTasks: builder.query<CalendarEventResponse[], void>({
+      query: () => 'CalendarTask',
+      transformResponse: (response: CalendarEventResponse[]) => {
+        return response.map((task) => ({
+          ...task,
+          type: 'task',
+        }));
+      },
+      providesTags: ['Task'],
+    }),
+    postTask: builder.mutation({
+      query: (task: CalendarTaskPostRequest) => ({
+        url: 'CalendarTask',
+        method: 'POST',
+        body: task,
+      }),
+      invalidatesTags: ['Task'],
+    }),
+    getCalendars: builder.query<
+      Calendar[],
+      { username: string; saved?: boolean }
+    >({
+      query: ({ username, saved = false }) => ({
+        url: `Calendar?username=${username}&subscribed=${saved}`,
       }),
       providesTags: ['Calendar'],
     }),
-    postCalendar: builder.mutation<void, { calendar: any; username: string }>({
-      query: ({ calendar, username }) => ({
-        url: `Calendar/${username}`,
+    postCalendar: builder.mutation<void, Calendar>({
+      query: (calendar) => ({
+        url: `Calendar`,
         method: 'POST',
         body: calendar,
       }),
+      invalidatesTags: ['Calendar'],
+    }),
+    getUsers: builder.query<UserResponse[], string>({
+      query: (username: string) => `AppUser?username=${username}`,
+      providesTags: ['User'],
+    }),
+    getUsersWithCalendars: builder.query<UserWithCalendarsResponse[], string>({
+      query: (username: string) =>
+        `AppUser?username=${username}&includeCalendars=true`,
+      keepUnusedDataFor: 5,
+      providesTags: ['User'],
+    }),
+    deleteCalendar: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `Calendar/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Calendar', 'Event'],
     }),
   }),
 });
@@ -62,6 +120,11 @@ export const {
   useLoginMutation,
   useGetEventsQuery,
   usePostEventMutation,
+  useGetTasksQuery,
+  usePostTaskMutation,
   useGetCalendarsQuery,
   usePostCalendarMutation,
+  useGetUsersQuery,
+  useGetUsersWithCalendarsQuery,
+  useDeleteCalendarMutation,
 } = apiSlice;

@@ -17,23 +17,19 @@ const AppLayout = () => {
   const isLoginPage = location.pathname === '/login';
   const isRegistrationPage = location.pathname === '/register';
 
-  const toggle = () => {
-    setCollapsed((prevCollapsed) => !prevCollapsed);
-  };
-
   return (
     <>
       {(isLoginPage || isRegistrationPage) && <AnimatedBackground />}
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ height: '100vh' }}>
         <Header className={classes['app-header']}>
-          <HeaderContent />
+          <HeaderContent showControls={!isLoginPage && !isRegistrationPage} />
         </Header>
-        <Layout>
+        <Layout hasSider={true}>
           {isLoginPage || isRegistrationPage || (
             <Sider
               collapsible
               collapsed={collapsed}
-              onCollapse={toggle}
+              onCollapse={(value) => setCollapsed(value)}
               width={300}
             >
               <SiderContent collapsed={collapsed} />

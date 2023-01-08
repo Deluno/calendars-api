@@ -1,35 +1,26 @@
 import SiderCalendar from '@/app/presentation/views/calendars/SiderCalendar/SiderCalendar';
-import EventModal from '@/app/presentation/views/events/EventModal/EventModal';
-import { CalendarEvent } from '@/types/events';
-import { CalendarOutlined, PlusOutlined } from '@ant-design/icons';
-import { Checkbox, Col, Menu, MenuProps } from 'antd';
+import CalendarEntityModal from '@/app/presentation/views/events/CalendarEntity/CalendarEntityModal';
+import { CalendarEntity } from '@/types/events';
+import { PlusOutlined } from '@ant-design/icons';
+import { Col, Menu } from 'antd';
 import { useState } from 'react';
-import { usePostEventMutation } from '@/app/data/source/api';
+import {
+  useGetCalendarsQuery,
+  usePostEventMutation,
+  usePostTaskMutation,
+} from '@/app/data/source/api';
 import classes from './SiderContent.module.css';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/app/data/store';
+import { getItem, MenuItem } from '@/utils/menu-item';
+import { MyCalendarsMenu } from '@/app/presentation/views/calendars/MyCalendarsMenu/MyCalendarsMenu';
 import moment from 'moment';
-
-type MenuItem = Required<MenuProps>['items'][number];
-
-const getItem = (
-  label: React.ReactNode,
-  key: React.Key,
-  icon?: React.ReactNode,
-  children?: MenuItem[],
-  type?: 'group',
-): MenuItem => {
-  return {
-    key,
-    icon,
-    children,
-    label,
-    type,
-  } as MenuItem;
-};
+import { CalendarSearch } from '@/app/presentation/views/calendars/CalendarSearch/CalendarSearch';
+import { SavedCalendarsMenu } from '@/app/presentation/views/calendars/SavedCalendarsMenu/SavedCalendarsMenu';
 
 enum MenuItemKey {
   ADD_EVENT = 'add-event',
   ADD_TASK = 'add-task',
-  ADD_CALENDAR = 'add-calendar',
 }
 
 const createMenuItems: MenuItem[] = [
@@ -39,55 +30,38 @@ const createMenuItems: MenuItem[] = [
   ]),
 ];
 
-const myCalendarsMenuItems: MenuItem[] = [
-  getItem('My calendars', 'my-calendars', <CalendarOutlined />, [
-    getItem(
-      <Checkbox>Calendar 1</Checkbox>,
-      'calendar-1',
-      undefined,
-      undefined,
-      'group',
-    ),
-    getItem(
-      <Checkbox>Calendar 2</Checkbox>,
-      'calendar-2',
-      undefined,
-      undefined,
-      'group',
-    ),
-    getItem(
-      <Checkbox>Calendar 3</Checkbox>,
-      'calendar-3',
-      undefined,
-      undefined,
-      'group',
-    ),
-  ]),
-];
-
 interface SiderContentProps {
   collapsed: boolean;
 }
 
-const SiderContent = (props: SiderContentProps) => {
-  const { collapsed } = props;
+const SiderContent = ({ collapsed }: SiderContentProps) => {
   const today = moment();
+  const username = useSelector(
+    (state: RootState) => state.userState.user.unique_name,
+  );
 
+  const { data: appUserCalendars } = useGetCalendarsQuery({ username });
+  const { data: savedCalendars } = useGetCalendarsQuery({
+    username,
+    saved: true,
+  });
   const [postEvent] = usePostEventMutation();
+  const [postTask] = usePostTaskMutation();
+
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItemKey>();
-  const [initialEvent, setInitialEvent] = useState<CalendarEvent>({
-    id: '',
+  const [initialEvent, setInitialEvent] = useState<CalendarEntity>({
+    id: undefined,
     type: 'event',
     title: '',
     description: '',
-    dateStart: moment(today, 'YYYY-MM-DD').toDate(),
+    startDate: moment(today, 'YYYY-MM-DD'),
   });
 
   const handleAddEvent = () => {
     setInitialEvent((prev) => ({
       ...prev,
       type: 'event',
-      dateEnd: moment(today, 'YYYY-MM-DD').add(1, 'hour').toDate(),
+      endDate: moment(today, 'YYYY-MM-DD').add(1, 'hour'),
     }));
     setSelectedMenuItem(MenuItemKey.ADD_EVENT);
   };
@@ -96,19 +70,35 @@ const SiderContent = (props: SiderContentProps) => {
     setInitialEvent((prev) => ({
       ...prev,
       type: 'task',
-      dateEnd: undefined,
+      endDate: undefined,
     }));
     setSelectedMenuItem(MenuItemKey.ADD_TASK);
   };
 
-  const handleEventModalSave = (event: CalendarEvent) => {
-    postEvent(event);
+  const handleEntitySave = (entity: CalendarEntity) => {
+    if (entity.type === 'event') {
+      const { type, id, ...event } = entity;
+      postEvent({
+        ...event,
+        startDate: event.startDate.toISOString(),
+        endDate: event.endDate!.toISOString(),
+      });
+    }
+    if (entity.type === 'task') {
+      const { type, id, ...task } = entity;
+      postTask({
+        ...task,
+        startDate: task.startDate.toISOString(),
+      });
+    }
+    setSelectedMenuItem(undefined);
   };
 
   return (
     <>
       <Col className={classes.menu}>
         <Menu
+          style={{ borderStyle: 'none' }}
           className={classes['menu-item']}
           mode='inline'
           items={createMenuItems}
@@ -125,18 +115,28 @@ const SiderContent = (props: SiderContentProps) => {
           }}
         />
         {collapsed || <SiderCalendar />}
-        <Menu
-          className={classes['menu-item']}
-          defaultOpenKeys={['my-calendars']}
-          mode='inline'
-          items={myCalendarsMenuItems}
+        {collapsed || <CalendarSearch />}
+        <MyCalendarsMenu
+          title='My calendars'
+          calendars={appUserCalendars}
+          collapsed={collapsed}
+          defaultChecked
+        />
+        <SavedCalendarsMenu
+          title='Saved calendars'
+          calendars={savedCalendars}
+          collapsed={collapsed}
+          defaultChecked={false}
         />
       </Col>
-      <EventModal
-        event={initialEvent}
-        isOpen={!!selectedMenuItem}
+      <CalendarEntityModal
+        entity={initialEvent}
+        isOpen={
+          selectedMenuItem === MenuItemKey.ADD_EVENT ||
+          selectedMenuItem === MenuItemKey.ADD_TASK
+        }
         onClose={() => setSelectedMenuItem(undefined)}
-        onEventSave={(event) => handleEventModalSave(event)}
+        onSave={(entity) => handleEntitySave(entity)}
       />
     </>
   );

@@ -1,12 +1,17 @@
+import { RootState } from '@/app/data/store';
 import { CaretLeftFilled, CaretRightFilled } from '@ant-design/icons';
 import { Button, Calendar, Col, Row } from 'antd';
 import { CalendarMode } from 'antd/lib/calendar/generateCalendar';
+import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import classes from './SiderCalendar.module.css';
+import type { Moment } from 'moment';
+import moment from 'moment';
 
 const renderCustomCalendarHeader = (
-  value: moment.Moment,
+  value: Moment,
   type: CalendarMode,
-  onChange: (date: moment.Moment) => void,
+  onChange: (date: Moment) => void,
   onTypeChange: (type: CalendarMode) => void,
 ) => {
   return (
@@ -16,12 +21,20 @@ const renderCustomCalendarHeader = (
           {value.format('MMMM YYYY')}
         </Col>
         <Col>
-          <Button>
+          <Button
+            onClick={() => {
+              onChange(value.clone().subtract(1, 'month'));
+            }}
+          >
             <CaretLeftFilled />
           </Button>
         </Col>
         <Col>
-          <Button>
+          <Button
+            onClick={() => {
+              onChange(value.clone().add(1, 'month'));
+            }}
+          >
             <CaretRightFilled />
           </Button>
         </Col>
@@ -31,6 +44,15 @@ const renderCustomCalendarHeader = (
 };
 
 const SiderCalendar = () => {
+  const selectedDate = useSelector(
+    (state: RootState) => state.calendarState.selectedDate,
+  );
+  const [date, setDate] = useState(moment());
+
+  useEffect(() => {
+    setDate(moment(selectedDate).local());
+  }, [selectedDate]);
+
   return (
     <Calendar
       className={classes.calendar}
@@ -38,6 +60,8 @@ const SiderCalendar = () => {
       headerRender={({ value, type, onChange, onTypeChange }) =>
         renderCustomCalendarHeader(value, type, onChange, onTypeChange)
       }
+      value={date}
+      onChange={(date) => setDate(date)}
     />
   );
 };
