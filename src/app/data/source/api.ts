@@ -1,11 +1,12 @@
 import {
   CalendarEventPostRequest,
+  CalendarEventPutRequest,
   CalendarTaskPostRequest,
   LoginRequest,
   RegistrationRequest,
 } from '@/types/requests';
 import {
-  CalendarEntityResponse as CalendarEventResponse,
+  CalendarEntityResponse,
   LoginResponse,
   UserResponse,
   UserWithCalendarsResponse,
@@ -26,7 +27,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Task', 'Event', 'Calendar', 'User'],
+  tagTypes: ['Task', 'Event', 'Calendar', 'User', 'SubscribedCalendar'],
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (user: RegistrationRequest) => ({
@@ -42,9 +43,10 @@ export const apiSlice = createApi({
         body: user,
       }),
     }),
-    getEvents: builder.query<CalendarEventResponse[], void>({
+
+    getEvents: builder.query<CalendarEntityResponse[], void>({
       query: () => 'CalendarEvent',
-      transformResponse: (response: CalendarEventResponse[]) => {
+      transformResponse: (response: CalendarEntityResponse[]) => {
         return response.map((event) => ({
           ...event,
           type: 'event',
@@ -60,9 +62,25 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Event'],
     }),
-    getTasks: builder.query<CalendarEventResponse[], void>({
+    putEvent: builder.mutation<void, CalendarEventPutRequest>({
+      query: ({ id, ...event }) => ({
+        url: `CalendarEvent/${id}`,
+        method: 'PUT',
+        body: event,
+      }),
+      invalidatesTags: ['Event'],
+    }),
+    deleteEvent: builder.mutation({
+      query: (id: number) => ({
+        url: `CalendarEvent/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Event'],
+    }),
+
+    getTasks: builder.query<CalendarEntityResponse[], void>({
       query: () => 'CalendarTask',
-      transformResponse: (response: CalendarEventResponse[]) => {
+      transformResponse: (response: CalendarEntityResponse[]) => {
         return response.map((task) => ({
           ...task,
           type: 'task',
@@ -78,14 +96,27 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Task'],
     }),
-    getCalendars: builder.query<
-      Calendar[],
-      { username: string; saved?: boolean }
-    >({
-      query: ({ username, saved = false }) => ({
-        url: `Calendar?username=${username}&subscribed=${saved}`,
+    putTask: builder.mutation({
+      query: ({ id, ...task }) => ({
+        url: `CalendarTask/${id}`,
+        method: 'PUT',
+        body: task,
       }),
-      providesTags: ['Calendar'],
+      invalidatesTags: ['Task'],
+    }),
+    deleteTask: builder.mutation({
+      query: (id: number) => ({
+        url: `CalendarTask/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Task'],
+    }),
+
+    getCalendars: builder.query<Calendar[], { saved?: boolean }>({
+      query: ({ saved = false }) => ({
+        url: `Calendar?subscribed=${saved}`,
+      }),
+      providesTags: ['Calendar', 'SubscribedCalendar'],
     }),
     postCalendar: builder.mutation<void, Calendar>({
       query: (calendar) => ({
@@ -95,6 +126,36 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Calendar'],
     }),
+    putCalendar: builder.mutation<void, Calendar>({
+      query: ({ id, ...calendar }) => ({
+        url: `Calendar/${id}`,
+        method: 'PUT',
+        body: calendar,
+      }),
+      invalidatesTags: ['Calendar'],
+    }),
+    deleteCalendar: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `Calendar/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Calendar', 'Event'],
+    }),
+    subscribeToCalendar: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `Calendar/${id}/subscribe`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['SubscribedCalendar'],
+    }),
+    unsubscribeFromCalendar: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `Calendar/${id}/unsubscribe`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['SubscribedCalendar'],
+    }),
+
     getUsers: builder.query<UserResponse[], string>({
       query: (username: string) => `AppUser?username=${username}`,
       providesTags: ['User'],
@@ -105,26 +166,30 @@ export const apiSlice = createApi({
       keepUnusedDataFor: 5,
       providesTags: ['User'],
     }),
-    deleteCalendar: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `Calendar/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Calendar', 'Event'],
-    }),
   }),
 });
 
 export const {
   useRegisterMutation,
   useLoginMutation,
+
   useGetEventsQuery,
   usePostEventMutation,
+  usePutEventMutation,
+  useDeleteEventMutation,
+
   useGetTasksQuery,
   usePostTaskMutation,
+  usePutTaskMutation,
+  useDeleteTaskMutation,
+
   useGetCalendarsQuery,
   usePostCalendarMutation,
+  usePutCalendarMutation,
+  useDeleteCalendarMutation,
+  useSubscribeToCalendarMutation,
+  useUnsubscribeFromCalendarMutation,
+
   useGetUsersQuery,
   useGetUsersWithCalendarsQuery,
-  useDeleteCalendarMutation,
 } = apiSlice;

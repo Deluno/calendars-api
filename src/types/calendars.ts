@@ -7,4 +7,5 @@ export interface Calendar {
 
 export interface SelectableCalendar extends Calendar {
   selected: boolean;
+  saved: boolean;
 }

@@ -9,7 +9,6 @@ export interface CalendarServiceUserState {
 
 export interface CalendarServiceSelectedCalendarsState {
   calendars: { [id: number]: SelectableCalendar };
-  savedCalendars: { [id: number]: SelectableCalendar };
   selectedDate: string;
 }
 

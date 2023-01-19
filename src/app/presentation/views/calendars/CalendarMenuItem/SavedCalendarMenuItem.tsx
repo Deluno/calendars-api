@@ -28,7 +28,7 @@ export const SavedCalendarMenuItemLabel = ({
 
   return (
     <Row style={{ paddingLeft: '1rem' }}>
-      <Col span={collapsed ? 14 : 16}>
+      <Col span={collapsed ? 18 : 20}>
         <Checkbox
           style={{ padding: '0.3rem 0' }}
           checked={checked}

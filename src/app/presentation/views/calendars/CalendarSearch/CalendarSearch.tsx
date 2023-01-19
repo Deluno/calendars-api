@@ -1,9 +1,12 @@
-import { useGetUsersWithCalendarsQuery } from '@/app/data/source/api';
+import {
+  useGetUsersWithCalendarsQuery,
+  useSubscribeToCalendarMutation,
+} from '@/app/data/source/api';
 import { RootState } from '@/app/data/store';
 import { CalendarFilled, SaveOutlined } from '@ant-design/icons';
 import { Button, Cascader, Space } from 'antd';
 import { DefaultOptionType } from 'antd/lib/select';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 export const CalendarSearch = () => {
@@ -13,6 +16,14 @@ export const CalendarSearch = () => {
   const [searchedUser, setSearchedUser] = useState<string>('');
   const [options, setOptions] = useState<DefaultOptionType[]>([]);
   const { data: users } = useGetUsersWithCalendarsQuery(searchedUser);
+  const [subscribeToCalendar] = useSubscribeToCalendarMutation();
+
+  const handleSaveCalendar = useCallback(
+    (calendarId: number) => {
+      subscribeToCalendar(calendarId);
+    },
+    [subscribeToCalendar],
+  );
 
   useEffect(() => {
     setOptions(
@@ -26,7 +37,13 @@ export const CalendarSearch = () => {
             label: (
               <>
                 Calendar: {calendar.name}
-                <Button type='link'>
+                <Button
+                  type='link'
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    handleSaveCalendar(calendar.id!);
+                  }}
+                >
                   <SaveOutlined />
                 </Button>
               </>
@@ -34,7 +51,7 @@ export const CalendarSearch = () => {
           })),
         })) ?? [],
     );
-  }, [currentUserId, users]);
+  }, [currentUserId, handleSaveCalendar, users]);
 
   const handleSearch = (value: string) => {
     if (value.length >= 3) setSearchedUser(value);

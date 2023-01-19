@@ -17,6 +17,15 @@ export interface CalendarEventPostRequest {
   calendarId?: number;
 }
 
+export interface CalendarEventPutRequest {
+  id: number;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  calendarId?: number;
+}
+
 export interface CalendarTaskPostRequest {
   title: string;
   description: string;

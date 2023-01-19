@@ -2,7 +2,9 @@ import { useLoginMutation } from '@/app/data/source/api';
 import { setToken, setUser } from '@/app/data/store/userSlice';
 import { LocalStorageKeys } from '@/types/common';
 import { decodeToken } from '@/utils/token';
-import { Card, Form, Input, Button, Skeleton } from 'antd';
+import { Card, Form, Input, Button, Skeleton, notification } from 'antd';
+import { NotificationInstance } from 'antd/lib/notification';
+import { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +12,8 @@ const LoginForm = () => {
   const dispatch = useDispatch();
 
   const [form] = Form.useForm();
-  const [login, { isLoading }] = useLoginMutation();
+  const [notify, contextHolder] = notification.useNotification();
+  const [login, { isLoading, error }] = useLoginMutation();
   const navigate = useNavigate();
 
   const handleLogin = async (values: any) => {
@@ -29,6 +32,22 @@ const LoginForm = () => {
       console.log(error);
     }
   };
+
+  const openNotification = useCallback(
+    (level: keyof NotificationInstance, message?: string) => {
+      notify[level]({
+        message,
+        placement: 'top',
+      });
+    },
+    [notify],
+  );
+
+  useEffect(() => {
+    if (error) {
+      openNotification('error', 'Invalid username or password');
+    }
+  }, [error, openNotification]);
 
   const formSkeleton = (
     <Form layout='vertical'>
@@ -51,7 +70,7 @@ const LoginForm = () => {
       form={form}
       layout='vertical'
       onFinish={(values) => handleLogin(values)}
-      onFinishFailed={(errorInfo) => console.log(errorInfo)}
+      onFinishFailed={(errorInfo) => {}}
     >
       <Form.Item
         label='Username'
@@ -83,7 +102,12 @@ const LoginForm = () => {
     </Form>
   );
 
-  return <Card title='Login'>{isLoading ? formSkeleton : loginForm}</Card>;
+  return (
+    <>
+      {contextHolder}
+      <Card title='Login'>{isLoading ? formSkeleton : loginForm}</Card>
+    </>
+  );
 };
 
 export default LoginForm;

@@ -11,6 +11,7 @@ export interface MonthCalendarDayProps {
   entities: CalendarEntity[];
   onEntityClick?: (event: CalendarEntity) => void;
   onDayClick?: (day: Moment) => void;
+  onMoreClick?: (day: Moment) => void;
 }
 
 export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
@@ -19,6 +20,7 @@ export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
     entities,
     onEntityClick = () => {},
     onDayClick = () => {},
+    onMoreClick = () => {},
   } = props;
   const { date } = day;
 
@@ -73,7 +75,13 @@ export const MonthCalendarDay = (props: MonthCalendarDayProps) => {
             </Button>
           ))}
         {showMore && (
-          <Button type='link' onClick={() => {}}>
+          <Button
+            type='link'
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoreClick(day.date);
+            }}
+          >
             +{entities.length - eventsPerDay} more
           </Button>
         )}

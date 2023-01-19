@@ -3,20 +3,24 @@ import CalendarEntityModal from '@/app/presentation/views/events/CalendarEntity/
 import { CalendarEntity } from '@/types/events';
 import { PlusOutlined } from '@ant-design/icons';
 import { Col, Menu } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useGetCalendarsQuery,
   usePostEventMutation,
   usePostTaskMutation,
 } from '@/app/data/source/api';
 import classes from './SiderContent.module.css';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/app/data/store';
 import { getItem, MenuItem } from '@/utils/menu-item';
 import { MyCalendarsMenu } from '@/app/presentation/views/calendars/MyCalendarsMenu/MyCalendarsMenu';
 import moment from 'moment';
 import { CalendarSearch } from '@/app/presentation/views/calendars/CalendarSearch/CalendarSearch';
 import { SavedCalendarsMenu } from '@/app/presentation/views/calendars/SavedCalendarsMenu/SavedCalendarsMenu';
+import {
+  resetCalendars,
+  setCalendars,
+  setSavedCalendars,
+} from '@/app/data/store/calendarsSlice';
+import { useDispatch } from 'react-redux';
 
 enum MenuItemKey {
   ADD_EVENT = 'add-event',
@@ -36,17 +40,24 @@ interface SiderContentProps {
 
 const SiderContent = ({ collapsed }: SiderContentProps) => {
   const today = moment();
-  const username = useSelector(
-    (state: RootState) => state.userState.user.unique_name,
-  );
+  const dispatch = useDispatch();
 
-  const { data: appUserCalendars } = useGetCalendarsQuery({ username });
-  const { data: savedCalendars } = useGetCalendarsQuery({
-    username,
-    saved: true,
-  });
+  const { data: appUserCalendars } = useGetCalendarsQuery({});
+  const { data: savedCalendars } = useGetCalendarsQuery({ saved: true });
   const [postEvent] = usePostEventMutation();
   const [postTask] = usePostTaskMutation();
+
+  useEffect(() => {
+    dispatch(resetCalendars());
+    if (appUserCalendars) {
+      dispatch(setCalendars({ calendars: appUserCalendars, checked: true }));
+    }
+    if (savedCalendars) {
+      dispatch(
+        setSavedCalendars({ calendars: savedCalendars, checked: false }),
+      );
+    }
+  }, [appUserCalendars, savedCalendars, dispatch]);
 
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItemKey>();
   const [initialEvent, setInitialEvent] = useState<CalendarEntity>({
@@ -116,18 +127,8 @@ const SiderContent = ({ collapsed }: SiderContentProps) => {
         />
         {collapsed || <SiderCalendar />}
         {collapsed || <CalendarSearch />}
-        <MyCalendarsMenu
-          title='My calendars'
-          calendars={appUserCalendars}
-          collapsed={collapsed}
-          defaultChecked
-        />
-        <SavedCalendarsMenu
-          title='Saved calendars'
-          calendars={savedCalendars}
-          collapsed={collapsed}
-          defaultChecked={false}
-        />
+        <MyCalendarsMenu title='My calendars' collapsed={collapsed} />
+        <SavedCalendarsMenu title='Saved calendars' collapsed={collapsed} />
       </Col>
       <CalendarEntityModal
         entity={initialEvent}

@@ -1,10 +1,13 @@
 import { useRegisterMutation } from '@/app/data/source/api';
-import { Card, Form, Input, Button, Skeleton } from 'antd';
+import { Card, Form, Input, Button, Skeleton, notification } from 'antd';
+import { NotificationInstance } from 'antd/lib/notification';
+import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const RegistrationForm = () => {
   const [form] = Form.useForm();
-  const [register, { isLoading }] = useRegisterMutation();
+  const [notify, contextHolder] = notification.useNotification();
+  const [register, { isLoading, error }] = useRegisterMutation();
   const navigate = useNavigate();
 
   const handleRegistration = async (values: any) => {
@@ -16,6 +19,31 @@ const RegistrationForm = () => {
       console.log(error);
     }
   };
+
+  const openNotification = useCallback(
+    (level: keyof NotificationInstance, message?: string) => {
+      notify[level]({
+        message,
+        placement: 'top',
+      });
+    },
+    [notify],
+  );
+
+  const isErrors = (obj: any): obj is { errors: string[] } => {
+    return (
+      typeof obj === 'object' &&
+      obj !== null &&
+      'errors' in obj &&
+      Array.isArray(obj.errors)
+    );
+  };
+
+  useEffect(() => {
+    if (error && 'data' in error && isErrors(error.data)) {
+      error.data.errors.map((err) => openNotification('error', err));
+    }
+  }, [error, openNotification]);
 
   const formSkeleton = (
     <Form layout='vertical'>
@@ -122,9 +150,12 @@ const RegistrationForm = () => {
   );
 
   return (
-    <Card title='Registration'>
-      {isLoading ? formSkeleton : registrationForm}
-    </Card>
+    <>
+      {contextHolder}
+      <Card title='Registration'>
+        {isLoading ? formSkeleton : registrationForm}
+      </Card>
+    </>
   );
 };
 

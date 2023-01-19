@@ -1,58 +1,53 @@
+import { useUnsubscribeFromCalendarMutation } from '@/app/data/source/api';
 import { RootState } from '@/app/data/store';
-import { setSavedCalendars } from '@/app/data/store/calendarsSlice';
+import { toggleCalendar } from '@/app/data/store/calendarsSlice';
 import { SavedCalendarMenuItemLabel } from '@/app/presentation/views/calendars/CalendarMenuItem/SavedCalendarMenuItem';
 import { Calendar } from '@/types/calendars';
 import { getItem, MenuItem } from '@/utils/menu-item';
 import { CalendarFilled } from '@ant-design/icons';
 import { Menu } from 'antd';
 import _ from 'lodash';
-import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 interface SavedCalendarsMenuProps {
   title: string;
-  defaultChecked?: boolean;
-  calendars?: Calendar[];
   collapsed?: boolean;
 }
 
 export const SavedCalendarsMenu = ({
   title,
-  calendars,
-  defaultChecked = false,
   collapsed,
 }: SavedCalendarsMenuProps) => {
   const dispatch = useDispatch();
-  const selectedSavedCalendars = useSelector(
-    (state: RootState) => state.calendarState.savedCalendars,
+  const selectedCalendars = useSelector(
+    (state: RootState) => state.calendarState.calendars,
     (prev, next) => _.isEqual(prev, next),
   );
+  const [unsubscribe] = useUnsubscribeFromCalendarMutation();
 
-  useEffect(() => {
-    if (calendars) {
-      dispatch(
-        setSavedCalendars({ calendars: calendars, checked: defaultChecked }),
-      );
-    }
-    console.log('selectedSavedCalendars', selectedSavedCalendars);
-  }, [calendars, defaultChecked, dispatch, selectedSavedCalendars]);
+  const handleRemoveSavedCalendar = (calendar: Calendar) => {
+    unsubscribe(calendar.id!);
+  };
 
-  const savedCalendarsChildren = Object.entries(selectedSavedCalendars)?.map(
-    ([id, calendar]) =>
+  const savedCalendarsChildren = Array.from(Object.values(selectedCalendars))
+    .filter((c) => c.saved)
+    .map((calendar) =>
       getItem(
         <SavedCalendarMenuItemLabel
           calendar={calendar}
           checked={calendar.selected}
           collapsed={collapsed}
-          onRemove={() => {}}
-          onSelectChange={(id) => {}}
+          onRemove={handleRemoveSavedCalendar}
+          onSelectChange={(id) => {
+            dispatch(toggleCalendar(id));
+          }}
         />,
-        id,
+        calendar.id!,
         undefined,
         undefined,
         'group',
       ),
-  );
+    );
 
   const savedCalendarsMenuItems: MenuItem[] = [
     getItem(

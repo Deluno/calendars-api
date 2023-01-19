@@ -6,15 +6,20 @@ import { MonthCalendarDay } from '../MonthCalendarDay/MonthCalendarDay';
 import CalendarEntityModal from '../../events/CalendarEntity/CalendarEntityModal';
 import classes from './MonthCalendar.module.css';
 import {
+  useDeleteEventMutation,
+  useDeleteTaskMutation,
   useGetEventsQuery,
   useGetTasksQuery,
   usePostEventMutation,
   usePostTaskMutation,
+  usePutEventMutation,
+  usePutTaskMutation,
 } from '@/app/data/source/api';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/app/data/store';
 import type { Moment } from 'moment';
 import moment from 'moment';
+import { CalendarDayDetailsModal } from '@/app/presentation/views/calendars/CalendarDayDetailsModal/CalendarDayDetailsModal';
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -22,19 +27,33 @@ const MonthCalendar = () => {
   const selectedCalendars = useSelector(
     (state: RootState) => state.calendarState.calendars,
   );
-  const selectedDate = useSelector(
+  const globalDate = useSelector(
     (state: RootState) => state.calendarState.selectedDate,
     (prev, next) => moment(prev).isSame(next, 'day'),
   );
   const [selectedEntity, setSelectedEntity] = useState<CalendarEntity>();
+  const [selectedDay, setSelectedDay] = useState<Moment>();
   const { data: events } = useGetEventsQuery();
   const { data: tasks } = useGetTasksQuery();
+
   const [postEvent] = usePostEventMutation();
+  const [putEvent] = usePutEventMutation();
+  const [deleteEvent] = useDeleteEventMutation();
   const [postTask] = usePostTaskMutation();
+  const [putTask] = usePutTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
 
   const { dates, weeks } = useMemo(
-    () => getCalendar(moment(selectedDate).local()),
-    [selectedDate],
+    () => getCalendar(moment(globalDate).local()),
+    [globalDate],
+  );
+
+  const signedUserCalendarsIds = useMemo(
+    () =>
+      Object.entries(selectedCalendars)
+        .filter(([, calendar]) => !calendar.saved)
+        .reduce((acc, [id]) => [...acc, +id], [] as number[]),
+    [selectedCalendars],
   );
 
   const entitiesFilter = useCallback(
@@ -54,20 +73,37 @@ const MonthCalendar = () => {
   );
 
   const handleEntitySave = (entity: CalendarEntity) => {
-    setSelectedEntity(undefined);
     if (entity.type === 'event') {
       const { type, id, ...event } = entity;
-      postEvent({
+      const body = {
         ...event,
         startDate: event.startDate.toISOString(),
         endDate: event.endDate!.toISOString(),
-      });
+      };
+      if (id) {
+        putEvent({ id, ...body });
+      } else {
+        postEvent(body);
+      }
     } else {
       const { type, id, ...task } = entity;
-      postTask({
+      const body = {
         ...task,
         startDate: task.startDate.toISOString(),
-      });
+      };
+      if (id) {
+        putTask({ id, ...body });
+      } else {
+        postTask(body);
+      }
+    }
+  };
+
+  const handleEntityDelete = (entity: CalendarEntity) => {
+    if (entity.type === 'event') {
+      deleteEvent(entity.id!);
+    } else {
+      deleteTask(entity.id!);
     }
   };
 
@@ -100,14 +136,40 @@ const MonthCalendar = () => {
                 description: '',
               } as CalendarEntity);
             }}
+            onMoreClick={(date) => {
+              setSelectedDay(date);
+            }}
           />
         ))}
       </div>
+      <CalendarDayDetailsModal
+        isOpen={!!selectedDay}
+        onClose={() => setSelectedDay(undefined)}
+        date={selectedDay!}
+        entities={entitiesFilter(selectedDay!)}
+        onEntityClick={(entity) => {
+          setSelectedEntity(entity);
+        }}
+      />
       <CalendarEntityModal
         entity={selectedEntity}
         isOpen={!!selectedEntity}
         onClose={() => setSelectedEntity(undefined)}
-        onSave={(entity) => handleEntitySave(entity)}
+        onSave={(entity) => {
+          setSelectedEntity(undefined);
+          handleEntitySave(entity);
+        }}
+        onDelete={(entity) => {
+          setSelectedEntity(undefined);
+          handleEntityDelete(entity);
+        }}
+        showDelete={
+          !!selectedEntity?.id &&
+          selectedEntity.calendarId !== undefined &&
+          signedUserCalendarsIds.find(
+            (id) => id === selectedEntity.calendarId,
+          ) !== undefined
+        }
       />
     </>
   );

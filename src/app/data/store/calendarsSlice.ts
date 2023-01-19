@@ -5,7 +5,6 @@ import moment from 'moment';
 
 const initialState: CalendarServiceSelectedCalendarsState = {
   calendars: {},
-  savedCalendars: {},
   selectedDate: moment().toISOString(),
 };
 
@@ -20,13 +19,18 @@ const calendarsSlice = createSlice({
         type: string;
       },
     ) => {
-      state.calendars = action.payload.calendars.reduce((acc, calendar) => {
-        acc[calendar.id!] = {
-          ...calendar,
-          selected: action.payload.checked,
-        };
-        return acc;
-      }, {} as { [key: number]: SelectableCalendar });
+      const selectableCalendars = action.payload.calendars.reduce(
+        (acc, calendar) => {
+          acc[calendar.id!] = {
+            ...calendar,
+            selected: action.payload.checked,
+            saved: false,
+          };
+          return acc;
+        },
+        {} as { [key: number]: SelectableCalendar },
+      );
+      state.calendars = { ...state.calendars, ...selectableCalendars };
     },
     toggleCalendar: (state, action: { payload: number; type: string }) => {
       state.calendars[action.payload].selected =
@@ -39,20 +43,21 @@ const calendarsSlice = createSlice({
         type: string;
       },
     ) => {
-      state.savedCalendars = action.payload.calendars.reduce(
+      const selectableCalendars = action.payload.calendars.reduce(
         (acc, calendar) => {
           acc[calendar.id!] = {
             ...calendar,
             selected: action.payload.checked,
+            saved: true,
           };
           return acc;
         },
         {} as { [key: number]: SelectableCalendar },
       );
+      state.calendars = { ...state.calendars, ...selectableCalendars };
     },
-    toggleSavedCalendar: (state, action: { payload: number; type: string }) => {
-      state.savedCalendars[action.payload].selected =
-        !state.savedCalendars[action.payload].selected;
+    resetCalendars: (state) => {
+      state.calendars = {};
     },
     setDate: (state, action: { payload: string; type: string }) => {
       state.selectedDate = action.payload;
@@ -64,7 +69,7 @@ export const {
   setCalendars,
   toggleCalendar,
   setSavedCalendars,
-  toggleSavedCalendar,
+  resetCalendars,
   setDate,
 } = calendarsSlice.actions;
 export default calendarsSlice;

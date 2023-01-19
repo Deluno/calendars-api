@@ -1,34 +1,40 @@
 import { useGetCalendarsQuery } from '@/app/data/source/api';
-import { RootState } from '@/app/data/store';
 import { Option } from '@/types/common';
 import { CalendarEntity } from '@/types/events';
 import {
   Alert,
+  Button,
   Cascader,
+  Col,
   DatePicker,
   Form,
   Input,
   Modal,
+  Popconfirm,
   Radio,
+  Row,
   Space,
   TimePicker,
 } from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 import { useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import type { Moment } from 'moment';
 import moment from 'moment';
+import { DeleteOutlined } from '@ant-design/icons';
+import { red } from '@ant-design/colors';
 
 interface CalendarEntityModalProps {
   entity?: CalendarEntity;
   isOpen?: boolean;
   onClose: () => void;
   onSave: (entity: CalendarEntity) => void;
+  onDelete?: (entity: CalendarEntity) => void;
+  showDelete?: boolean;
 }
 
 interface CalendarEntityFormValues {
-  timeRange: (string | number | Date | Moment | null | undefined)[];
-  startDate: string | number | Date | Moment | null | undefined;
+  timeRange: Moment[];
+  startDate: Moment;
   calendarId: [any];
   type: any;
   title: any;
@@ -40,12 +46,11 @@ const CalendarEntityModal = ({
   isOpen,
   onSave,
   onClose,
+  onDelete = () => {},
+  showDelete = false,
 }: CalendarEntityModalProps) => {
   const [form] = Form.useForm();
-  const username = useSelector(
-    (state: RootState) => state.userState.user.unique_name,
-  );
-  const { data: calendars } = useGetCalendarsQuery({ username });
+  const { data: calendars } = useGetCalendarsQuery({});
 
   const calendarOptions = useMemo(
     () =>
@@ -125,11 +130,35 @@ const CalendarEntityModal = ({
     onClose();
   };
 
+  const handleDelete = () => {
+    onDelete(entity!);
+  };
+
+  const modalTitleText =
+    entity && (entity.id ? `Edit ${entity.type}` : `New ${entity.type}`);
+
+  const modalTitle = (
+    <Row justify='space-between'>
+      <Col>{modalTitleText}</Col>
+      {showDelete && (
+        <Col style={{ paddingRight: '1.5rem' }}>
+          <Popconfirm
+            title={`Are you sure you want to delete this ${entity?.type}?`}
+            onConfirm={handleDelete}
+          >
+            <Button type='text' size='small'>
+              <DeleteOutlined style={{ color: red.primary }} />
+            </Button>
+          </Popconfirm>
+        </Col>
+      )}
+    </Row>
+  );
+
   return (
     <Modal
-      title={
-        entity && (entity.id ? `Edit ${entity.type}` : `New ${entity.type}`)
-      }
+      style={{ zIndex: 1000 }}
+      title={modalTitle}
       centered
       onOk={handleOk}
       open={isOpen}
@@ -161,10 +190,14 @@ const CalendarEntityModal = ({
             name: 'calendarId',
             value: calendarId ? [calendarId] : undefined,
           },
+          { name: 'hiddenCalendarId', value: calendarId },
         ]}
         layout='vertical'
         name='calendar-entity-modal-form'
       >
+        <Form.Item name='hiddenCalendarId' hidden>
+          <Input hidden />
+        </Form.Item>
         <Form.Item name='type'>
           <Radio.Group
             options={typeOptions}
@@ -220,14 +253,29 @@ const CalendarEntityModal = ({
           />
         </Form.Item>
         <Form.Item
-          name='calendarId'
-          rules={[{ required: true, message: 'Please select a calendar' }]}
+          noStyle
+          shouldUpdate={(prevValues, currentValues) =>
+            prevValues.calendarId !== currentValues.calendarId
+          }
         >
-          {calendarOptions.length === 0 ? (
-            <Alert message='No calendars found!' type='warning' />
-          ) : (
-            <Cascader options={calendarOptions} placeholder='Calendar' />
-          )}
+          {({ getFieldValue }) =>
+            calendars?.find(
+              (c) => c.id === getFieldValue('hiddenCalendarId'),
+            ) && (
+              <Form.Item
+                name='calendarId'
+                rules={[
+                  { required: true, message: 'Please select a calendar' },
+                ]}
+              >
+                {calendarOptions.length === 0 ? (
+                  <Alert message='No calendars found!' type='warning' />
+                ) : (
+                  <Cascader options={calendarOptions} placeholder='Calendar' />
+                )}
+              </Form.Item>
+            )
+          }
         </Form.Item>
       </Form>
     </Modal>
